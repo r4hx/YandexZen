@@ -37,7 +37,7 @@ class Channel(YandexZen):
                 for self.pub in self.__response.json()['items']:
                     self.publication_list.append(self.pub['link'])
         except ValueError:
-            logging.info("Сбор статей с использованием пагинации завершен.")
+            pass
         return self.publication_list
 
     def subscribers(self):
@@ -73,6 +73,15 @@ class Post(YandexZen):
     def post_type(self):
         return 0
 
+    def engagement_rate(self, num_like, num_comment, num_viewed):
+        self.num_like = num_like
+        self.num_comment = num_comment
+        self.num_viewed = num_viewed
+        try:
+            return round((self.num_like + self.num_comment) / self.num_viewed * 100, 2)
+        except ZeroDivisionError:
+            return 0
+
     def hashtag(self):
         self.hashtag = self.response.html.find('.zen-tag-publishers__title')
         self.hashtag = str([i.text for i in self.hashtag]).replace('\'', '').replace(']', '').replace('[', '')
@@ -91,7 +100,11 @@ class Post(YandexZen):
 
     def like(self):
         try:
-            self.like = int(self.response.html.find('.likes-count-minimal__count', first=True).text)
+            self.like = self.response.html.find('.likes-count-minimal__count', first=True).text
+            if not self.like:
+                raise AttributeError
+            else:
+                self.like = int(self.like)
         except AttributeError:
             self.like = 0
         return self.like
@@ -159,7 +172,7 @@ class Report():
         self.name = name
         self.table = PrettyTable(border=True, header=True)
         self.table.format = True
-        self.table.field_names = ["№", "Дата", "Название", "Тип", "Лайки", "Комментарии", "Просмотры", "Дочитано", "%", "Время", "Хештеги"]
+        self.table.field_names = ["№", "Дата", "Название", "Тип", "ER", "Лайки", "Комментарии", "Просмотры", "Дочитано", "%", "Время", "Хештеги"]
         self.table.align["Название"] = "l"
         self.table.align["Дата"] = "l"
         self.sortby = sortby
@@ -171,13 +184,16 @@ class Report():
             self.table.sortby = "Просмотры"
         elif self.sortby == 'reads':
             self.table.sortby = "Дочитано"
+        elif self.sortby == 'er':
+            self.table.sortby = "ER"
         self.table.reversesort = True
         self.row_count = 1
 
-    def add_row(self, date, title, post_type, like, comment, viewed, reading, reading_percentage, time_reading, hashtag):
+    def add_row(self, date, title, post_type, engagement_rate, like, comment, viewed, reading, reading_percentage, time_reading, hashtag):
         self.date = date
         self.title = title
         self.post_type = post_type
+        self.engagement_rate = engagement_rate
         self.like = like
         self.comment = comment
         self.viewed = viewed
@@ -185,7 +201,7 @@ class Report():
         self.reading_percentage = reading_percentage
         self.time_reading = time_reading
         self.hashtag = hashtag
-        self.table.add_row([self.row_count, self.date, self.title, self.post_type, self.like, self.comment, self.viewed, self.reading, "{}%".format(self.reading_percentage), self.time_reading, self.hashtag])
+        self.table.add_row([self.row_count, self.date, self.title, self.post_type, "{}%".format(self.engagement_rate), self.like, self.comment, self.viewed, self.reading, "{}%".format(self.reading_percentage), self.time_reading, self.hashtag])
         self.row_count += 1
 
     def output(self, o_format, header):

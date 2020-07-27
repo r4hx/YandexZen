@@ -4,7 +4,7 @@ from function import Channel, Post, Report
 
 PARSER = argparse.ArgumentParser(description='Yandex.Zen analatycs channel analytics utility')
 PARSER.add_argument('-u', help='channel url', required=True)
-PARSER.add_argument('-o', help='output format [asci, html]. default: asci', default='asci')
+PARSER.add_argument('-o', help='output format [ascii, html]. default: ascii', default='ascii')
 PARSER.add_argument('-s', help='sortby [er, likes, comments, views, reads]. default: er', default='er')
 ARGS = vars(PARSER.parse_args())
 

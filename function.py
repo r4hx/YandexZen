@@ -207,7 +207,7 @@ class Report():
     def output(self, o_format, header):
         self.o_format = o_format
         self.header = header
-        if self.o_format == 'asci':
+        if self.o_format == 'ascii':
             print(self.header)
             print(self.table)
         elif self.o_format == 'html':
